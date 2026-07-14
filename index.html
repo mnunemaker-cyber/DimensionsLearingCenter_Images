@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shared Image Library</title>
+<style>
+  :root {
+    --navy: #0D2137;
+    --teal: #00C4B3;
+    --bg: #F6F8F9;
+    --card-bg: #FFFFFF;
+    --border: #E1E6E9;
+    --text-muted: #5B6B76;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--navy);
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 28px 24px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  header p {
+    margin: 0;
+    color: #B7C4CC;
+    font-size: 14px;
+  }
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  #search {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  #count {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .card-body {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .filename {
+    font-size: 13px;
+    word-break: break-all;
+    color: var(--navy);
+  }
+  .copy-btn {
+    border: 1px solid var(--teal);
+    background: #fff;
+    color: var(--teal);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .copy-btn:hover {
+    background: var(--teal);
+    color: #fff;
+  }
+  .copy-btn.copied {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+  }
+  .empty h2 {
+    color: var(--navy);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .empty p {
+    font-size: 14px;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Shared image library</h1>
+  <p>Browse images below and copy the direct link to use anywhere.</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="Filter by filename...">
+    <span id="count"></span>
+  </div>
+  <div id="grid" class="grid"></div>
+  <div id="empty" class="empty" style="display:none;">
+    <h2>No images yet</h2>
+    <p>Once images are added to the <code>images/</code> folder and listed in this page, they'll appear here for easy browsing and link copying.</p>
+  </div>
+</main>
+
+<script>
+  // ---- EDIT THIS LIST WHEN YOU ADD NEW IMAGES ----
+  // Just add the filename (as it appears in the images/ folder) to this array.
+  const imageFiles = [
+    // "example-screenshot.png",
+    // "logo-teal.png",
+  ];
+  // -------------------------------------------------
+
+  const baseUrl = window.location.href.replace(/index\.html$/, '') + 'images/';
+
+  const grid = document.getElementById('grid');
+  const emptyState = document.getElementById('empty');
+  const searchInput = document.getElementById('search');
+  const countEl = document.getElementById('count');
+
+  function render(filter = '') {
+    grid.innerHTML = '';
+    const filtered = imageFiles.filter(f => f.toLowerCase().includes(filter.toLowerCase()));
+
+    if (imageFiles.length === 0) {
+      emptyState.style.display = 'block';
+      grid.style.display = 'none';
+      countEl.textContent = '';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    grid.style.display = 'grid';
+    countEl.textContent = filtered.length + ' image' + (filtered.length === 1 ? '' : 's');
+
+    filtered.forEach(filename => {
+      const url = baseUrl + filename;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="thumb"><img src="${url}" alt="${filename}" loading="lazy"></div>
+        <div class="card-body">
+          <div class="filename">${filename}</div>
+          <button class="copy-btn" data-url="${url}">Copy link</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    grid.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.url).then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('copied');
+          }, 1500);
+        });
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', (e) => render(e.target.value));
+
+  render();
+</script>
+
+</body>
+</html>
